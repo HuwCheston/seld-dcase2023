@@ -1,0 +1,24 @@
+[project]
+name = "seld-dcase2023"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "huwcheston",email = "hwc31@cam.ac.uk"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+package-mode = false
+
+[tool.poetry.dependencies]
+numpy = "*"
+ipython = "*"
+scikit-learn = "*"
+joblib = "*"
+matplotlib = "*"
+librosa = "*"
+scipy = "*"
+torch = "*"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
