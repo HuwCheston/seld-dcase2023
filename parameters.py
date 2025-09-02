@@ -15,18 +15,18 @@ def get_params(argv='1'):
 
         # INPUT PATH
         # dataset_dir='DCASE2020_SELD_dataset/',  # Base folder containing the foa/mic and metadata folders
-        dataset_dir='/scratch/asignal/partha/DCASE2023/DCASE2023_SELD_dataset',
+        dataset_dir='/home/huw-cheston/Documents/python_projects/seld-dcase2023/base_folder',
 
         # OUTPUT PATHS
         # feat_label_dir='DCASE2020_SELD_dataset/feat_label_hnet/',  # Directory to dump extracted features and labels
-        feat_label_dir='/scratch/asignal/partha/DCASE2023/DCASE2023_SELD_dataset/seld_feat_label',
+        feat_label_dir='/home/huw-cheston/Documents/python_projects/seld-dcase2023/seld_feat_label',
  
-        model_dir='models/',            # Dumps the trained models and training curves in this folder
-        dcase_output_dir='results/',    # recording-wise results are dumped in this path.
+        model_dir='/home/huw-cheston/Documents/python_projects/seld-dcase2023/models/',            # Dumps the trained models and training curves in this folder
+        dcase_output_dir='/home/huw-cheston/Documents/python_projects/seld-dcase2023/results/',    # recording-wise results are dumped in this path.
 
         # DATASET LOADING PARAMETERS
         mode='dev',         # 'dev' - development or 'eval' - evaluation dataset
-        dataset='foa',       # 'foa' - ambisonic or 'mic' - microphone signals
+        dataset='mic',       # 'foa' - ambisonic or 'mic' - microphone signals
 
         #FEATURE PARAMS
         fs=24000,
