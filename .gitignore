@@ -3,3 +3,6 @@
 *.csv
 
 .idea
+*.h5
+*.npy
+seld_feat_label/
