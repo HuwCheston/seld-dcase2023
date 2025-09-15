@@ -6,7 +6,7 @@ authors = [
     {name = "huwcheston",email = "hwc31@cam.ac.uk"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 package-mode = false
 
 [tool.poetry.dependencies]
@@ -22,3 +22,4 @@ torch = "*"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+package-mode = false
