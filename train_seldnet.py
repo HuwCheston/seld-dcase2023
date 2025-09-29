@@ -237,7 +237,7 @@ def main(argv):
             val_splits = [[4]]
             train_splits = [[1, 2, 3]] 
         elif '2023' in params['dataset_dir']:
-            test_splits = [[4]]
+            test_splits = [[5]]
             val_splits = [[4]]
             train_splits = [[1, 2, 3]] 
 
@@ -296,6 +296,7 @@ def main(argv):
         cls_feature_class.delete_and_create_folder(dcase_output_val_folder)
         print('Dumping recording-wise val results in: {}'.format(dcase_output_val_folder))
 
+        save_path__ = os.path.join(dcase_output_val_folder, "epoch_results.txt")
         # Initialize evaluation metric class
         score_obj = ComputeSELDResults(params)
 
@@ -335,18 +336,23 @@ def main(argv):
                 best_val_epoch, best_ER, best_F, best_LE, best_LR, best_seld_scr = epoch_cnt, val_ER, val_F, val_LE, val_LR, val_seld_scr
                 torch.save(model.state_dict(), model_name)
 
-            # Print stats
-            print(
+            print_str__ = (
                 'epoch: {}, time: {:0.2f}/{:0.2f}, '
-                # 'train_loss: {:0.2f}, val_loss: {:0.2f}, '
                 'train_loss: {:0.4f}, val_loss: {:0.4f}, '
                 'ER/F/LE/LR/SELD: {}, '
                 'best_val_epoch: {} {}'.format(
                     epoch_cnt, train_time, val_time,
                     train_loss, val_loss,
                     '{:0.2f}/{:0.2f}/{:0.2f}/{:0.2f}/{:0.2f}'.format(val_ER, val_F, val_LE, val_LR, val_seld_scr),
-                    best_val_epoch, '({:0.2f}/{:0.2f}/{:0.2f}/{:0.2f}/{:0.2f})'.format(best_ER, best_F, best_LE, best_LR, best_seld_scr))
+                    best_val_epoch,
+                    '({:0.2f}/{:0.2f}/{:0.2f}/{:0.2f}/{:0.2f})'.format(best_ER, best_F, best_LE, best_LR, best_seld_scr)
+                )
             )
+
+            # Print stats
+            print(print_str__)
+            with open(save_path__, "a") as fout__:
+                fout__.write(print_str__ + "\n")
 
             patience_cnt += 1
             if patience_cnt > params['patience']:
