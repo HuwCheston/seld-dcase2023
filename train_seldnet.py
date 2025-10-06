@@ -296,7 +296,7 @@ def main(argv):
         cls_feature_class.delete_and_create_folder(dcase_output_val_folder)
         print('Dumping recording-wise val results in: {}'.format(dcase_output_val_folder))
 
-        save_path__ = os.path.join(dcase_output_val_folder, "epoch_results.txt")
+        save_path__ = dcase_output_val_folder + "_epoch_results.txt"
         # Initialize evaluation metric class
         score_obj = ComputeSELDResults(params)
 
@@ -398,8 +398,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    try:
-        sys.exit(main(sys.argv))
-    except (ValueError, IOError) as e:
-        sys.exit(e)
-
+    main(sys.argv)
