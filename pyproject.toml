@@ -1,15 +1,13 @@
-[project]
+[tool.poetry]
 name = "seld-dcase2023"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "huwcheston",email = "hwc31@cam.ac.uk"}
-]
+description = "Sound event localization and detection system for DCASE 2023"
+authors = ["huwcheston <hwc31@cam.ac.uk>"]
 readme = "README.md"
-requires-python = ">=3.10"
 package-mode = false
 
 [tool.poetry.dependencies]
+python = ">=3.10"
 numpy = "*"
 ipython = "*"
 scikit-learn = "*"
@@ -22,4 +20,4 @@ torch = "*"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
-package-mode = true
+
