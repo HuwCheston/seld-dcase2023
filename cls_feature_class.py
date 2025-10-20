@@ -329,32 +329,32 @@ class FeatureClass:
     # ------------------------------- EXTRACT FEATURE AND PREPROCESS IT -------------------------------
 
     def extract_file_feature(self, _arg_in):
-                _file_cnt, _wav_path, _feat_path = _arg_in
-                spect = self._get_spectrogram_for_file(_wav_path)
+        _file_cnt, _wav_path, _feat_path = _arg_in
+        spect = self._get_spectrogram_for_file(_wav_path)
 
-                #extract mel
-                if not self._use_salsalite:
-                    mel_spect = self._get_mel_spectrogram(spect)
+        #extract mel
+        if not self._use_salsalite:
+            mel_spect = self._get_mel_spectrogram(spect)
 
-                feat = None
-                if self._dataset == 'foa':
-                    # extract intensity vectors
-                    foa_iv = self._get_foa_intensity_vectors(spect)
-                    feat = np.concatenate((mel_spect, foa_iv), axis=-1)
-                elif self._dataset == 'mic':
-                    if self._use_salsalite:
-                        feat = self._get_salsalite(spect)
-                    else:
-                        # extract gcc
-                        gcc = self._get_gcc(spect)
-                        feat = np.concatenate((mel_spect, gcc), axis=-1)
-                else:
-                    print('ERROR: Unknown dataset format {}'.format(self._dataset))
-                    exit()
+        feat = None
+        if self._dataset == 'foa':
+            # extract intensity vectors
+            foa_iv = self._get_foa_intensity_vectors(spect)
+            feat = np.concatenate((mel_spect, foa_iv), axis=-1)
+        elif self._dataset == 'mic':
+            if self._use_salsalite:
+                feat = self._get_salsalite(spect)
+            else:
+                # extract gcc
+                gcc = self._get_gcc(spect)
+                feat = np.concatenate((mel_spect, gcc), axis=-1)
+        else:
+            print('ERROR: Unknown dataset format {}'.format(self._dataset))
+            exit()
 
-                if feat is not None:
-                    print('{}: {}, {}'.format(_file_cnt, os.path.basename(_wav_path), feat.shape ))
-                    np.save(_feat_path, feat)
+        if feat is not None:
+            print('{}: {}, {}'.format(_file_cnt, os.path.basename(_wav_path), feat.shape ))
+            np.save(_feat_path, feat)
 
     def extract_all_feature(self):
         # setting up folders
@@ -374,7 +374,8 @@ class FeatureClass:
                 wav_filename = '{}.wav'.format(file_name.split('.')[0])
                 wav_path = os.path.join(loc_aud_folder, wav_filename)
                 feat_path = os.path.join(self._feat_dir, '{}.npy'.format(wav_filename.split('.')[0]))
-                self.extract_file_feature((file_cnt, wav_path, feat_path))
+                if not os.path.isfile(feat_path):
+                    self.extract_file_feature((file_cnt, wav_path, feat_path))
                 arg_list.append((file_cnt, wav_path, feat_path))
 #        with Pool() as pool:
 #            result = pool.map(self.extract_file_feature, iterable=arg_list)
