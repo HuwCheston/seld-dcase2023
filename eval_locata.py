@@ -28,7 +28,7 @@ def get_params_feats(model_dir: Path):
     params["dcase_output_dir"] = results_path.resolve()
 
     # Load up feature weights for this dataset
-    model_preprocessed_feat_weights = (model_dir.parent / "feat_label/foa_wts").resolve()
+    model_preprocessed_feat_weights = (model_dir.resolve().parent / "feat_label/foa_wts").resolve()
     assert model_preprocessed_feat_weights.is_file()
 
     lab_path = TemporaryDirectory(dir="LOCATA_dcase")
@@ -106,18 +106,20 @@ def proc(model_path: Path, params: dict, thresh: float = 0.5):
     return classwise_test_scr[0][2][cls_cnt], classwise_test_scr[0][3][cls_cnt]
 
 
-def main(model_dir, thresh):
+def main(model_dir, thresh, ignore_180: bool):
     if isinstance(thresh, float):
         thresh = [thresh]
 
+    model_dir = Path(model_dir)
     params, lab_path = get_params_feats(model_dir)
     res = []
-    model_dir = Path(model_dir)
     for th in thresh:
         les, lrs = [], []
         for model_path in os.listdir(model_dir):
             if model_path.endswith(".h5"):
                 le, lr = proc(model_dir / model_path, params, float(th))
+                if ignore_180 and le == 180:
+                    continue
                 les.append(le)
                 lrs.append(lr)
         mean_le = np.mean(les)
@@ -134,7 +136,7 @@ def main(model_dir, thresh):
         )
 
     df = pd.DataFrame(res, columns=['model', 'thresh', 'le', 'lr'])
-    df.to_csv(model_dir / "results.csv", index=False)
+    df.to_csv(model_dir / "locata_results.csv", index=False)
 
     lab_path.cleanup()
 
@@ -150,7 +152,12 @@ if __name__ == "__main__":
         "--thresh",
         type=float,
         nargs="+",
-        help=f"The threshold values to test"
+        help="The threshold values to test"
+    )
+    ap.add_argument(
+        "--ignore-180",
+        help="Add this flag to skip over non-predicted classes (as in DCASE-2024)",
+        action="store_true",
     )
     args = vars(ap.parse_args())
-    main(*args)
+    main(**args)

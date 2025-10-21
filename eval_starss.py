@@ -86,7 +86,7 @@ def main(model_dir, ignore_musicinstrument):
             model_idx += 1
 
     df = pd.DataFrame.from_records(res)
-    df.round(2).to_csv(model_dir / "averaged_results.csv", index=False)
+    df.round(2).to_csv(model_dir / "starss_results.csv", index=False)
 
     if ignore_musicinstrument:
         df = df[df["cls_cnt"] != 9]
