@@ -4,8 +4,9 @@
 # the code below (if-else loop) and use them. This way you can easily reproduce a configuration on a later time.
 
 
-def get_params(argv='1'):
-    print("SET: {}".format(argv))
+def get_params(argv='1', do_print: bool = True):
+    if do_print:
+        print("SET: {}".format(argv))
     # ########### default parameters ##############
     params = dict(
         quick_test=False,     # To do quick test. Trains/test on small subset of dataset, and # of epochs
@@ -71,54 +72,63 @@ def get_params(argv='1'):
 
     # ########### User defined parameters ##############
     if argv == '1':
-        print("USING DEFAULT PARAMETERS\n")
+        if do_print:
+            print("USING DEFAULT PARAMETERS\n")
 
     elif argv == '2':
-        print("FOA + ACCDOA\n")
+        if do_print:
+            print("FOA + ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'foa'
         params['multi_accdoa'] = False
 
     elif argv == '3':
-        print("FOA + multi ACCDOA\n")
+        if do_print:
+            print("FOA + multi ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'foa'
         params['multi_accdoa'] = True
 
     elif argv == '4':
-        print("MIC + GCC + ACCDOA\n")
+        if do_print:
+            print("MIC + GCC + ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'mic'
         params['use_salsalite'] = False
         params['multi_accdoa'] = False
 
     elif argv == '5':
-        print("MIC + SALSA + ACCDOA\n")
+        if do_print:
+            print("MIC + SALSA + ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'mic'
         params['use_salsalite'] = True
         params['multi_accdoa'] = False
 
     elif argv == '6':
-        print("MIC + GCC + multi ACCDOA\n")
+        if do_print:
+            print("MIC + GCC + multi ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'mic'
         params['use_salsalite'] = False
         params['multi_accdoa'] = True
 
     elif argv == '7':
-        print("MIC + SALSA + multi ACCDOA\n")
+        if do_print:
+            print("MIC + SALSA + multi ACCDOA\n")
         params['quick_test'] = False
         params['dataset'] = 'mic'
         params['use_salsalite'] = True
         params['multi_accdoa'] = True
 
     elif argv == '999':
-        print("QUICK TEST MODE\n")
+        if do_print:
+            print("QUICK TEST MODE\n")
         params['quick_test'] = True
 
     else:
-        print('ERROR: unknown argument {}'.format(argv))
+        if do_print:
+            print('ERROR: unknown argument {}'.format(argv))
         exit()
 
     feature_label_resolution = int(params['label_hop_len_s'] // params['hop_len_s'])
@@ -137,5 +147,6 @@ def get_params(argv='1'):
 
 
     for key, value in params.items():
-        print("\t{}: {}".format(key, value))
+        if do_print:
+            print("\t{}: {}".format(key, value))
     return params

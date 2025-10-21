@@ -15,7 +15,7 @@ from cls_compute_seld_results import ComputeSELDResults
 
 def proc(model_path: str, thresh: float = 0.5):
     task_id = "3"
-    params = parameters.get_params(task_id)
+    params = parameters.get_params(task_id, do_print=False)
 
     # Update all parameters with hardcoded filepaths
     params["dataset_dir"] = Path("./LOCATA_dcase").resolve()
