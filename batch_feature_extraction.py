@@ -22,6 +22,10 @@ def main(task_id, data_dir):
         params["model_dir"] = data_dir / "models"
         params["dcase_output_dir"] = data_dir / "results"
 
+        print("====UPDATED PARAMETERS====")
+        for key, value in params.items():
+            print("\t{}: {}".format(key, value))
+
     # -------------- Extract features and labels for development set -----------------------------
     dev_feat_cls = cls_feature_class.FeatureClass(params)
 
