@@ -102,7 +102,7 @@ def main(args):
     les, lrs = [], []
     for model_path in os.listdir(model_dir):
         if model_path.endswith(".h5"):
-            le, lr = proc(Path(model_dir) / model_path)
+            le, lr = proc(Path(model_dir) / model_path, float(thresh))
             if le >= 180:
                 continue
             les.append(le)

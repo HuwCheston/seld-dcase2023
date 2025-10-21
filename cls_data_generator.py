@@ -39,7 +39,8 @@ class DataGenerator(object):
 
         self._get_filenames_list_and_feat_label_sizes()
 
-        if do_print:
+        self.do_print = do_print
+        if self.do_print:
             print(
                 '\tDatagen_mode: {}, nb_files: {}, nb_classes:{}\n'
                 '\tnb_frames_file: {}, feat_len: {}, nb_ch: {}, label_len:{}\n'.format(
@@ -76,7 +77,8 @@ class DataGenerator(object):
         return self._nb_total_batches
 
     def _get_filenames_list_and_feat_label_sizes(self):
-        print('Computing some stats about the dataset')
+        if self.do_print:
+            print('Computing some stats about the dataset')
         max_frames, total_frames, temp_feat = -1, 0, []
         for filename in os.listdir(self._feat_dir):
             if int(filename[4]) in self._splits: # check which split the file belongs to
@@ -91,7 +93,8 @@ class DataGenerator(object):
             self._nb_frames_file = max_frames if self._per_file else temp_feat.shape[0]
             self._nb_ch = temp_feat.shape[1] // self._nb_mel_bins
         else:
-            print('Loading features failed')
+            if self.do_print:
+                print('Loading features failed')
             exit()
 
         if not self._is_eval:
@@ -106,7 +109,8 @@ class DataGenerator(object):
 
         if self._per_file:
             self._batch_size = int(np.ceil(max_frames/float(self._feature_seq_len)))
-            print('\tWARNING: Resetting batch size to {}. To accommodate the inference of longest file of {} frames in a single batch'.format(self._batch_size, max_frames))
+            if self.do_print:
+                print('\tWARNING: Resetting batch size to {}. To accommodate the inference of longest file of {} frames in a single batch'.format(self._batch_size, max_frames))
             self._nb_total_batches = len(self._filenames_list)
         else:
             self._nb_total_batches = int(np.floor(total_frames / (self._batch_size*self._feature_seq_len)))
