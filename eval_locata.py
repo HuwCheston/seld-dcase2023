@@ -2,6 +2,7 @@ import csv
 import os
 from argparse import ArgumentParser
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from time import gmtime, strftime
 
 import numpy as np
@@ -16,29 +17,33 @@ from seldnet_model import SeldModel, MSELoss_ADPIT
 from train_seldnet import test_epoch
 
 
-def proc(model_path: str, thresh: float = 0.5):
+def get_params_feats(model_dir: Path):
     task_id = "3"
     params = parameters.get_params(task_id, do_print=False)
 
     # Update all parameters with hardcoded filepaths
     params["dataset_dir"] = Path("./LOCATA_dcase").resolve()
-    lab_path = Path("./LOCATA_dcase/feat_label").resolve()
     results_path = Path("./LOCATA_dcase/results")
-    params["feat_label_dir"] = lab_path
     params["model_dir"] = Path("./LOCATA_dcase/models").resolve()
     params["dcase_output_dir"] = results_path.resolve()
 
-    # Extract features if not done already
-    if not len(list(lab_path.rglob("*.npy"))) > 0:
-        dev_feat_cls = cls_feature_class.FeatureClass(params)
+    # Load up feature weights for this dataset
+    model_preprocessed_feat_weights = (model_dir.parent / "feat_label/foa_wts").resolve()
+    assert model_preprocessed_feat_weights.is_file()
 
-        # # Extract features and normalize them
-        dev_feat_cls.extract_all_feature()
-        dev_feat_cls.preprocess_features()
+    lab_path = TemporaryDirectory(dir="LOCATA_dcase")
+    params["feat_label_dir"] = lab_path.name
 
-        # Extract labels
-        dev_feat_cls.extract_all_labels()
+    # Extract features and preprocess based on already extracted weights
+    dev_feat_cls = cls_feature_class.FeatureClass(params)
+    dev_feat_cls.extract_all_feature()
+    dev_feat_cls.preprocess_features(model_preprocessed_feat_weights)
+    dev_feat_cls.extract_all_labels()
 
+    return params, lab_path
+
+
+def proc(model_path: Path, params: dict, thresh: float = 0.5):
     # Create test dataset
     data_gen_test = DataGenerator(
         params=params, split=[1], shuffle=False, per_file=True, do_print=False
@@ -59,7 +64,7 @@ def proc(model_path: str, thresh: float = 0.5):
     # Dump results in DCASE output format for calculating final scores
     dcase_output_test_folder = os.path.join(params['dcase_output_dir'], "tmp", strftime("%Y%m%d%H%M%S", gmtime()))
     cls_feature_class.delete_and_create_folder(dcase_output_test_folder)
-    test_loss = test_epoch(data_gen_test, model, criterion, dcase_output_test_folder, params, "cpu", thresh=thresh)
+    test_epoch(data_gen_test, model, criterion, dcase_output_test_folder, params, "cpu", thresh=thresh)
 
     # Update csv files
     for file in Path(dcase_output_test_folder).rglob(".csv"):
@@ -97,6 +102,7 @@ def proc(model_path: str, thresh: float = 0.5):
         classwise_test_scr[0][4][cls_cnt] if use_jackknife else classwise_test_scr[4][cls_cnt],
         '[{:0.2f}, {:0.2f}]'.format(classwise_test_scr[1][4][cls_cnt][0],
                                     classwise_test_scr[1][4][cls_cnt][1]) if use_jackknife else ''))
+
     return classwise_test_scr[0][2][cls_cnt], classwise_test_scr[0][3][cls_cnt]
 
 
@@ -104,13 +110,14 @@ def main(model_dir, thresh):
     if isinstance(thresh, float):
         thresh = [thresh]
 
+    params, lab_path = get_params_feats(model_dir)
     res = []
     model_dir = Path(model_dir)
     for th in thresh:
         les, lrs = [], []
         for model_path in os.listdir(model_dir):
             if model_path.endswith(".h5"):
-                le, lr = proc(model_dir / model_path, float(th))
+                le, lr = proc(model_dir / model_path, params, float(th))
                 les.append(le)
                 lrs.append(lr)
         mean_le = np.mean(les)
@@ -128,6 +135,8 @@ def main(model_dir, thresh):
 
     df = pd.DataFrame(res, columns=['model', 'thresh', 'le', 'lr'])
     df.to_csv(model_dir / "results.csv", index=False)
+
+    lab_path.cleanup()
 
 
 if __name__ == "__main__":

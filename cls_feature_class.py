@@ -10,6 +10,7 @@ import joblib
 from IPython import embed
 import matplotlib.pyplot as plot
 import librosa
+from pathlib import Path
 plot.switch_backend('agg')
 import shutil
 import math
@@ -383,16 +384,21 @@ class FeatureClass:
 #            pool.join()
         print(time.time()-start_s)
 
-    def preprocess_features(self):
+    def preprocess_features(self, feat_wts_path: Path = None):
         # Setting up folders and filenames
         self._feat_dir = self.get_unnormalized_feat_dir()
         self._feat_dir_norm = self.get_normalized_feat_dir()
         create_folder(self._feat_dir_norm)
-        normalized_features_wts_file = self.get_normalized_wts_file()
+
+        # Use passed in feature weights path
+        if feat_wts_path is not None:
+            normalized_features_wts_file = feat_wts_path
+        else:
+            normalized_features_wts_file = self.get_normalized_wts_file()
         spec_scaler = None
 
         # pre-processing starts
-        if self._is_eval:
+        if self._is_eval or feat_wts_path is not None:
             spec_scaler = joblib.load(normalized_features_wts_file)
             print('Normalized_features_wts_file: {}. Loaded.'.format(normalized_features_wts_file))
 
