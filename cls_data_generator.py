@@ -14,6 +14,7 @@ class DataGenerator(object):
     def __init__(
             self, params, split=1, shuffle=True, per_file=False, is_eval=False, do_print: bool = True
     ):
+        self.do_print = do_print
         self._per_file = per_file
         self._is_eval = is_eval
         self._splits = np.array(split)
@@ -39,7 +40,6 @@ class DataGenerator(object):
 
         self._get_filenames_list_and_feat_label_sizes()
 
-        self.do_print = do_print
         if self.do_print:
             print(
                 '\tDatagen_mode: {}, nb_files: {}, nb_classes:{}\n'
