@@ -1,16 +1,19 @@
-import cls_feature_class
-import parameters
-import sys
 import csv
 import os
-import torch
-import numpy as np
-from time import gmtime, strftime
+from argparse import ArgumentParser
 from pathlib import Path
-from seldnet_model import SeldModel, MSELoss_ADPIT
-from cls_data_generator import DataGenerator
-from train_seldnet import test_epoch
+from time import gmtime, strftime
+
+import numpy as np
+import pandas as pd
+import torch
+
+import cls_feature_class
+import parameters
 from cls_compute_seld_results import ComputeSELDResults
+from cls_data_generator import DataGenerator
+from seldnet_model import SeldModel, MSELoss_ADPIT
+from train_seldnet import test_epoch
 
 
 def proc(model_path: str, thresh: float = 0.5):
@@ -97,19 +100,48 @@ def proc(model_path: str, thresh: float = 0.5):
     return classwise_test_scr[0][2][cls_cnt], classwise_test_scr[0][3][cls_cnt]
 
 
-def main(args):
-    _, model_dir, thresh = args
-    les, lrs = [], []
-    for model_path in os.listdir(model_dir):
-        if model_path.endswith(".h5"):
-            le, lr = proc(Path(model_dir) / model_path, float(thresh))
-            les.append(le)
-            lrs.append(lr)
-    print(f"Averages (thresh={thresh}) \t LE: {np.mean(les)}, LR {np.mean(lrs) * 100}")
+def main(model_dir, thresh):
+    if isinstance(thresh, float):
+        thresh = [thresh]
+
+    res = []
+    model_dir = Path(model_dir)
+    for th in thresh:
+        les, lrs = [], []
+        for model_path in os.listdir(model_dir):
+            if model_path.endswith(".h5"):
+                le, lr = proc(model_dir / model_path, float(th))
+                les.append(le)
+                lrs.append(lr)
+        mean_le = np.mean(les)
+        mean_lr = np.mean(lrs) * 100
+
+        print(f"Averages (thresh={thresh}) \t LE: {mean_le}, LR {mean_lr}")
+        res.append(
+            dict(
+                model=model_dir,
+                thresh=th,
+                le=mean_le,
+                lr=mean_lr,
+            )
+        )
+
+    df = pd.DataFrame(res, columns=['model', 'thresh', 'le', 'lr'])
+    df.to_csv(model_dir / "results.csv", index=False)
 
 
 if __name__ == "__main__":
-    try:
-        sys.exit(main(sys.argv))
-    except (ValueError, IOError) as e:
-        sys.exit(e)
+    ap = ArgumentParser()
+    ap.add_argument(
+        "--model-dir",
+        help="Directory containing .h5 files",
+        type=str
+    )
+    ap.add_argument(
+        "--thresh",
+        type=float,
+        nargs="+",
+        help=f"The threshold values to test"
+    )
+    args = vars(ap.parse_args())
+    main(*args)
