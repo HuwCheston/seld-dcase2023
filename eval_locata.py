@@ -114,30 +114,24 @@ def main(model_dir, thresh, ignore_180: bool):
     params, lab_path = get_params_feats(model_dir)
     res = []
     for th in thresh:
-        les, lrs = [], []
+        model_idx = 0
         for model_path in os.listdir(model_dir):
             if model_path.endswith(".h5"):
                 le, lr = proc(model_dir / model_path, params, float(th))
                 if ignore_180 and le == 180:
                     continue
-                les.append(le)
-                lrs.append(lr)
-        mean_le = np.mean(les)
-        mean_lr = np.mean(lrs) * 100
-
-        print(f"Averages (thresh={th}) \t LE: {mean_le}, LR {mean_lr}")
-        res.append(
-            dict(
-                model=model_dir,
-                thresh=th,
-                le=mean_le,
-                lr=mean_lr,
-            )
-        )
+                res.append(
+                    dict(
+                        thresh=th,
+                        model_idx=model_idx,
+                        LE=le,
+                        LR=lr * 100,
+                    )
+                )
+                model_idx += 1
 
     df = pd.DataFrame(res, columns=['model', 'thresh', 'le', 'lr'])
     df.to_csv(model_dir / "locata_results.csv", index=False)
-
     lab_path.cleanup()
 
 
