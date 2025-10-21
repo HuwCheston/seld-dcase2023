@@ -130,7 +130,7 @@ def main(model_dir, thresh, ignore_180: bool):
                 )
                 model_idx += 1
 
-    df = pd.DataFrame(res, columns=['model', 'thresh', 'le', 'lr'])
+    df = pd.DataFrame(res, columns=['model_idx', 'thresh', 'LE', 'LR'])
     df.to_csv(model_dir / "locata_results.csv", index=False)
     lab_path.cleanup()
 
