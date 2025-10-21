@@ -125,7 +125,7 @@ def main(model_dir, thresh, ignore_180: bool):
         mean_le = np.mean(les)
         mean_lr = np.mean(lrs) * 100
 
-        print(f"Averages (thresh={thresh}) \t LE: {mean_le}, LR {mean_lr}")
+        print(f"Averages (thresh={th}) \t LE: {mean_le}, LR {mean_lr}")
         res.append(
             dict(
                 model=model_dir,
