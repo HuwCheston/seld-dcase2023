@@ -4,22 +4,26 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plot
-import cls_feature_class
-import cls_data_generator
-import seldnet_model
-import parameters
 import time
+from argparse import ArgumentParser
 from time import gmtime, strftime
+from pathlib import Path
+
+import matplotlib.pyplot as plot
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-plot.switch_backend('agg')
 from IPython import embed
-from cls_compute_seld_results import ComputeSELDResults, reshape_3Dto2D
+
+import cls_data_generator
+import cls_feature_class
+import parameters
+import seldnet_model
 from SELD_evaluation_metrics import distance_between_cartesian_coordinates
-import seldnet_model 
+from cls_compute_seld_results import ComputeSELDResults, reshape_3Dto2D
+
+plot.switch_backend('agg')
 
 def get_accdoa_labels(accdoa_in, nb_classes, thresh: float = 0.5):
     x, y, z = accdoa_in[:, :, :nb_classes], accdoa_in[:, :, nb_classes:2*nb_classes], accdoa_in[:, :, 2*nb_classes:]
@@ -185,39 +189,30 @@ def train_epoch(data_generator, optimizer, model, criterion, params, device):
     return train_loss
 
 
-def main(argv):
+def main(task_id, job_id, data_dir):
     """
     Main wrapper for training sound event localization and detection network.
-
-    :param argv: expects two optional inputs.
-        first input: task_id - (optional) To chose the system configuration in parameters.py.
-                                (default) 1 - uses default parameters
-        second input: job_id - (optional) all the output files will be uniquely represented with this.
-                              (default) 1
-
     """
-    print(argv)
-    if len(argv) != 3:
-        print('\n\n')
-        print('-------------------------------------------------------------------------------------------------------')
-        print('The code expected two optional inputs')
-        print('\t>> python seld.py <task-id> <job-id>')
-        print('\t\t<task-id> is used to choose the user-defined parameter set from parameter.py')
-        print('Using default inputs for now')
-        print('\t\t<job-id> is a unique identifier which is used for output filenames (models, training plots). '
-              'You can use any number or string for this.')
-        print('-------------------------------------------------------------------------------------------------------')
-        print('\n\n')
-
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     torch.autograd.set_detect_anomaly(True)
 
-    # use parameter set defined by user
-    task_id = '1' if len(argv) < 2 else argv[1]
+    # use parameter set defined by user with overrides
+    task_id = str(task_id)
+    job_id = int(job_id)
     params = parameters.get_params(task_id)
 
-    job_id = 1 if len(argv) < 3 else argv[-1]
+    # allow override of parameters
+    if data_dir:
+        data_dir = Path(data_dir).resolve()
+        params["dataset_dir"] = data_dir
+        params["feat_label_dir"] = data_dir / "feat_label"
+        params["model_dir"] = data_dir / "models"
+        params["dcase_output_dir"] = data_dir / "results"
+
+        print("====UPDATED PARAMETERS====")
+        for key, value in params.items():
+            print("\t{}: {}".format(key, value))
 
     # Training setup
     train_splits, val_splits, test_splits = None, None, None
@@ -398,4 +393,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    ap = ArgumentParser()
+    ap.add_argument("--task-id", type=str, required=True, default="3", )
+    ap.add_argument("--job-id", type=int, required=False, default="1", )
+    ap.add_argument("--data-dir", type=str, required=False, default=None, help="Use this to override the data directory in parameters.py")
+
+    args = vars(ap.parse_args())
+
+    main(**args)
