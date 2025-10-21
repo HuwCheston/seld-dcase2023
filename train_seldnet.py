@@ -21,14 +21,14 @@ from cls_compute_seld_results import ComputeSELDResults, reshape_3Dto2D
 from SELD_evaluation_metrics import distance_between_cartesian_coordinates
 import seldnet_model 
 
-def get_accdoa_labels(accdoa_in, nb_classes):
+def get_accdoa_labels(accdoa_in, nb_classes, thresh: float = 0.5):
     x, y, z = accdoa_in[:, :, :nb_classes], accdoa_in[:, :, nb_classes:2*nb_classes], accdoa_in[:, :, 2*nb_classes:]
-    sed = np.sqrt(x**2 + y**2 + z**2) > 0.5
+    sed = np.sqrt(x**2 + y**2 + z**2) > thresh
       
     return sed, accdoa_in
 
 
-def get_multi_accdoa_labels(accdoa_in, nb_classes):
+def get_multi_accdoa_labels(accdoa_in, nb_classes, thresh: float = 0.5):
     """
     Args:
         accdoa_in:  [batch_size, frames, num_track*num_axis*num_class=3*3*12]
@@ -38,15 +38,15 @@ def get_multi_accdoa_labels(accdoa_in, nb_classes):
         doaX:       [batch_size, frames, num_axis*num_class=3*12]
     """
     x0, y0, z0 = accdoa_in[:, :, :1*nb_classes], accdoa_in[:, :, 1*nb_classes:2*nb_classes], accdoa_in[:, :, 2*nb_classes:3*nb_classes]
-    sed0 = np.sqrt(x0**2 + y0**2 + z0**2) > 0.5
+    sed0 = np.sqrt(x0**2 + y0**2 + z0**2) > thresh
     doa0 = accdoa_in[:, :, :3*nb_classes]
 
     x1, y1, z1 = accdoa_in[:, :, 3*nb_classes:4*nb_classes], accdoa_in[:, :, 4*nb_classes:5*nb_classes], accdoa_in[:, :, 5*nb_classes:6*nb_classes]
-    sed1 = np.sqrt(x1**2 + y1**2 + z1**2) > 0.5
+    sed1 = np.sqrt(x1**2 + y1**2 + z1**2) > thresh
     doa1 = accdoa_in[:, :, 3*nb_classes: 6*nb_classes]
 
     x2, y2, z2 = accdoa_in[:, :, 6*nb_classes:7*nb_classes], accdoa_in[:, :, 7*nb_classes:8*nb_classes], accdoa_in[:, :, 8*nb_classes:]
-    sed2 = np.sqrt(x2**2 + y2**2 + z2**2) > 0.5
+    sed2 = np.sqrt(x2**2 + y2**2 + z2**2) > thresh
     doa2 = accdoa_in[:, :, 6*nb_classes:]
 
     return sed0, doa0, sed1, doa1, sed2, doa2
@@ -63,7 +63,7 @@ def determine_similar_location(sed_pred0, sed_pred1, doa_pred0, doa_pred1, class
         return 0
 
 
-def test_epoch(data_generator, model, criterion, dcase_output_folder, params, device):
+def test_epoch(data_generator, model, criterion, dcase_output_folder, params, device, thresh: float = 0.5):
     # Number of frames for a 60 second audio with 100ms hop length = 600 frames
     # Number of frames in one batch (batch_size* sequence_length) consists of all the 600 frames above with zero padding in the remaining frames
     test_filelist = data_generator.get_filelist()
@@ -80,7 +80,7 @@ def test_epoch(data_generator, model, criterion, dcase_output_folder, params, de
             output = model(data)
             loss = criterion(output, target)
             if params['multi_accdoa'] is True:
-                sed_pred0, doa_pred0, sed_pred1, doa_pred1, sed_pred2, doa_pred2 = get_multi_accdoa_labels(output.detach().cpu().numpy(), params['unique_classes'])
+                sed_pred0, doa_pred0, sed_pred1, doa_pred1, sed_pred2, doa_pred2 = get_multi_accdoa_labels(output.detach().cpu().numpy(), params['unique_classes'], thresh)
                 sed_pred0 = reshape_3Dto2D(sed_pred0)
                 doa_pred0 = reshape_3Dto2D(doa_pred0)
                 sed_pred1 = reshape_3Dto2D(sed_pred1)
@@ -88,7 +88,7 @@ def test_epoch(data_generator, model, criterion, dcase_output_folder, params, de
                 sed_pred2 = reshape_3Dto2D(sed_pred2)
                 doa_pred2 = reshape_3Dto2D(doa_pred2)
             else:
-                sed_pred, doa_pred = get_accdoa_labels(output.detach().cpu().numpy(), params['unique_classes'])
+                sed_pred, doa_pred = get_accdoa_labels(output.detach().cpu().numpy(), params['unique_classes'], thresh)
                 sed_pred = reshape_3Dto2D(sed_pred)
                 doa_pred = reshape_3Dto2D(doa_pred)
 
@@ -105,15 +105,15 @@ def test_epoch(data_generator, model, criterion, dcase_output_folder, params, de
                         flag_2sim0 = determine_similar_location(sed_pred2[frame_cnt][class_cnt], sed_pred0[frame_cnt][class_cnt], doa_pred2[frame_cnt], doa_pred0[frame_cnt], class_cnt, params['thresh_unify'], params['unique_classes'])
                         # unify or not unify according to flag
                         if flag_0sim1 + flag_1sim2 + flag_2sim0 == 0:
-                            if sed_pred0[frame_cnt][class_cnt]>0.5:
+                            if sed_pred0[frame_cnt][class_cnt] > thresh:
                                 if frame_cnt not in output_dict:
                                     output_dict[frame_cnt] = []
                                 output_dict[frame_cnt].append([class_cnt, doa_pred0[frame_cnt][class_cnt], doa_pred0[frame_cnt][class_cnt+params['unique_classes']], doa_pred0[frame_cnt][class_cnt+2*params['unique_classes']]])
-                            if sed_pred1[frame_cnt][class_cnt]>0.5:
+                            if sed_pred1[frame_cnt][class_cnt] > thresh:
                                 if frame_cnt not in output_dict:
                                     output_dict[frame_cnt] = []
                                 output_dict[frame_cnt].append([class_cnt, doa_pred1[frame_cnt][class_cnt], doa_pred1[frame_cnt][class_cnt+params['unique_classes']], doa_pred1[frame_cnt][class_cnt+2*params['unique_classes']]])
-                            if sed_pred2[frame_cnt][class_cnt]>0.5:
+                            if sed_pred2[frame_cnt][class_cnt] > thresh:
                                 if frame_cnt not in output_dict:
                                     output_dict[frame_cnt] = []
                                 output_dict[frame_cnt].append([class_cnt, doa_pred2[frame_cnt][class_cnt], doa_pred2[frame_cnt][class_cnt+params['unique_classes']], doa_pred2[frame_cnt][class_cnt+2*params['unique_classes']]])
@@ -121,17 +121,17 @@ def test_epoch(data_generator, model, criterion, dcase_output_folder, params, de
                             if frame_cnt not in output_dict:
                                 output_dict[frame_cnt] = []
                             if flag_0sim1:
-                                if sed_pred2[frame_cnt][class_cnt]>0.5:
+                                if sed_pred2[frame_cnt][class_cnt] > thresh:
                                     output_dict[frame_cnt].append([class_cnt, doa_pred2[frame_cnt][class_cnt], doa_pred2[frame_cnt][class_cnt+params['unique_classes']], doa_pred2[frame_cnt][class_cnt+2*params['unique_classes']]])
                                 doa_pred_fc = (doa_pred0[frame_cnt] + doa_pred1[frame_cnt]) / 2
                                 output_dict[frame_cnt].append([class_cnt, doa_pred_fc[class_cnt], doa_pred_fc[class_cnt+params['unique_classes']], doa_pred_fc[class_cnt+2*params['unique_classes']]])
                             elif flag_1sim2:
-                                if sed_pred0[frame_cnt][class_cnt]>0.5:
+                                if sed_pred0[frame_cnt][class_cnt] > thresh:
                                     output_dict[frame_cnt].append([class_cnt, doa_pred0[frame_cnt][class_cnt], doa_pred0[frame_cnt][class_cnt+params['unique_classes']], doa_pred0[frame_cnt][class_cnt+2*params['unique_classes']]])
                                 doa_pred_fc = (doa_pred1[frame_cnt] + doa_pred2[frame_cnt]) / 2
                                 output_dict[frame_cnt].append([class_cnt, doa_pred_fc[class_cnt], doa_pred_fc[class_cnt+params['unique_classes']], doa_pred_fc[class_cnt+2*params['unique_classes']]])
                             elif flag_2sim0:
-                                if sed_pred1[frame_cnt][class_cnt]>0.5:
+                                if sed_pred1[frame_cnt][class_cnt] > thresh:
                                     output_dict[frame_cnt].append([class_cnt, doa_pred1[frame_cnt][class_cnt], doa_pred1[frame_cnt][class_cnt+params['unique_classes']], doa_pred1[frame_cnt][class_cnt+2*params['unique_classes']]])
                                 doa_pred_fc = (doa_pred2[frame_cnt] + doa_pred0[frame_cnt]) / 2
                                 output_dict[frame_cnt].append([class_cnt, doa_pred_fc[class_cnt], doa_pred_fc[class_cnt+params['unique_classes']], doa_pred_fc[class_cnt+2*params['unique_classes']]])
@@ -143,7 +143,7 @@ def test_epoch(data_generator, model, criterion, dcase_output_folder, params, de
             else:
                 for frame_cnt in range(sed_pred.shape[0]):
                     for class_cnt in range(sed_pred.shape[1]):
-                        if sed_pred[frame_cnt][class_cnt]>0.5:
+                        if sed_pred[frame_cnt][class_cnt] > thresh:
                             if frame_cnt not in output_dict:
                                 output_dict[frame_cnt] = []
                             output_dict[frame_cnt].append([class_cnt, doa_pred[frame_cnt][class_cnt], doa_pred[frame_cnt][class_cnt+params['unique_classes']], doa_pred[frame_cnt][class_cnt+2*params['unique_classes']]]) 

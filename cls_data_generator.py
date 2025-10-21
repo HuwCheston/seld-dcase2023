@@ -12,7 +12,7 @@ import random
 
 class DataGenerator(object):
     def __init__(
-            self, params, split=1, shuffle=True, per_file=False, is_eval=False
+            self, params, split=1, shuffle=True, per_file=False, is_eval=False, do_print: bool = True
     ):
         self._per_file = per_file
         self._is_eval = is_eval
@@ -39,26 +39,27 @@ class DataGenerator(object):
 
         self._get_filenames_list_and_feat_label_sizes()
 
-        print(
-            '\tDatagen_mode: {}, nb_files: {}, nb_classes:{}\n'
-            '\tnb_frames_file: {}, feat_len: {}, nb_ch: {}, label_len:{}\n'.format(
-                'eval' if self._is_eval else 'dev', len(self._filenames_list),  self._nb_classes,
-                self._nb_frames_file, self._nb_mel_bins, self._nb_ch, self._label_len
-                )
-        )
-
-        print(
-            '\tDataset: {}, split: {}\n'
-            '\tbatch_size: {}, feat_seq_len: {}, label_seq_len: {}, shuffle: {}\n'
-            '\tTotal batches in dataset: {}\n'
-            '\tlabel_dir: {}\n '
-            '\tfeat_dir: {}\n'.format(
-                params['dataset'], split,
-                self._batch_size, self._feature_seq_len, self._label_seq_len, self._shuffle,
-                self._nb_total_batches,
-                self._label_dir, self._feat_dir
+        if do_print:
+            print(
+                '\tDatagen_mode: {}, nb_files: {}, nb_classes:{}\n'
+                '\tnb_frames_file: {}, feat_len: {}, nb_ch: {}, label_len:{}\n'.format(
+                    'eval' if self._is_eval else 'dev', len(self._filenames_list),  self._nb_classes,
+                    self._nb_frames_file, self._nb_mel_bins, self._nb_ch, self._label_len
+                    )
             )
-        )
+
+            print(
+                '\tDataset: {}, split: {}\n'
+                '\tbatch_size: {}, feat_seq_len: {}, label_seq_len: {}, shuffle: {}\n'
+                '\tTotal batches in dataset: {}\n'
+                '\tlabel_dir: {}\n '
+                '\tfeat_dir: {}\n'.format(
+                    params['dataset'], split,
+                    self._batch_size, self._feature_seq_len, self._label_seq_len, self._shuffle,
+                    self._nb_total_batches,
+                    self._label_dir, self._feat_dir
+                )
+            )
 
     def get_data_sizes(self):
         feat_shape = (self._batch_size, self._nb_ch, self._feature_seq_len, self._nb_mel_bins)
